@@ -260,12 +260,12 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     G = W>=860 ? {cx:W*.72, cy:H*.44, R:Math.min(H*.29,W*.19,300)} : {cx:W*.52, cy:H*.7, R:Math.min(W*.34,190)};
     G.by=H+40;
     stars=[]; if(!TH.light) for(let i=0;i<Math.round(W*H/60000);i++) stars.push({x:Math.random()*W,y:Math.random()*H*.6,r:rnd(.4,1.3),ph:Math.random()*6.28,sp:rnd(.6,2)});
-    flies=[]; const nf=TH.light?clamp(Math.round(W*H/40000),12,36):clamp(Math.round(W*H/16000),30,90);
+    flies=[]; const nf=TH.light?clamp(Math.round(W*H/52000),12,30):clamp(Math.round(W*H/16000),30,90);
     for(let i=0;i<nf;i++){
-      const r=Math.random(), layer=TH.light?0:(r<.6?0:2);
-      const y = layer===2 ? rnd(.62,1.02)*H : H*(1-Math.pow(Math.random(),1.5)*.82);
+      const r=Math.random(), layer=TH.light?2:(r<.6?0:2);
+      const y = TH.light ? rnd(.06,1)*H : layer===2 ? rnd(.62,1.02)*H : H*(1-Math.pow(Math.random(),1.5)*.82);
       flies.push({layer,x:Math.random()*W,y,vx:rnd(-9,9),vy:rnd(-6,3),ph:Math.random()*6.28,per:rnd(2.2,6.5),c:(Math.random()*AMBER.length)|0,
-        s: layer===0?rnd(7,13):layer===1?rnd(14,26):rnd(34,80)});
+        s: TH.light?rnd(28,120):layer===0?rnd(7,13):layer===1?rnd(14,26):rnd(34,80)});
     }
     grassBack=TH.light?makeGrass(90,.03,.1,TH.grass[0]):makeGrass(120,.12,.34,TH.grass[0]);
     grassFront=TH.light?makeGrass(70,.02,.075,TH.grass[1]):makeGrass(95,.08,.28,TH.grass[1]);
@@ -295,7 +295,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     neb(W*.62,H*1.04,Math.max(W*.55,H*.6),TH.horizon[0],.09);
   }
   // her Ultramarine and Persimmon suns, with a printed grain; drawn into their own canvas
-  let sunCv=null;
+  let sunCv=null, sunPos=null;
   function paintSuns(){
     sunCv=document.createElement('canvas'); sunCv.width=Math.round(W*dpr); sunCv.height=Math.round(H*dpr);
     const g=sunCv.getContext('2d');
@@ -308,10 +308,25 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
         const gx=(X0+x)*sc, gy=(Y0+y)*sc, st=Math.sin(gx*.9+gy*.35)*Math.sin(gy*1.3-gx*.2), n=Math.random();
         const c=(n>.93||st>.86)?hi:(n<.05?lo:base), j=(Math.random()-.5)*14, i=(y*w+x)*4;
         p[i]=c[0]+j; p[i+1]=c[1]+j; p[i+2]=c[2]+j; p[i+3]=al*255; } }
-      g.putImageData(img,X0,Y0);
+      // composite through a scratch canvas so the sun's halo underneath isn't wiped out
+      const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h; tmp.getContext('2d').putImageData(img,0,0);
+      g.save(); g.setTransform(1,0,0,1,0,0); g.drawImage(tmp,X0,Y0); g.restore();
     };
     disc(G.cx,G.cy,G.R*1.24,[10,47,189],[40,80,220],[6,32,150]);
-    disc(G.cx-G.R*1.55,H+G.R*.18,G.R*.78,[254,117,57],[255,150,95],[226,90,36]);
+    const sx=G.cx-G.R*1.55, sy=H+G.R*.18, sr=G.R*.78;
+    sunPos={x:sx,y:sy,r:sr};
+    g.setTransform(dpr,0,0,dpr,0,0);
+    const halo=g.createRadialGradient(sx,sy,sr*.9,sx,sy,sr*2.1);
+    halo.addColorStop(0,'rgba(254,117,57,.32)'); halo.addColorStop(.35,'rgba(255,170,90,.14)'); halo.addColorStop(1,'rgba(255,200,120,0)');
+    g.fillStyle=halo; g.fillRect(sx-sr*2.2,sy-sr*2.2,sr*4.4,sr*4.4);
+    g.setTransform(1,0,0,1,0,0);
+    disc(sx,sy,sr,[254,117,57],[255,150,95],[226,90,36]);
+    g.setTransform(dpr,0,0,dpr,0,0);
+    g.save(); g.beginPath(); g.arc(sx,sy,sr,0,Math.PI*2); g.clip();
+    const heart=g.createRadialGradient(sx-sr*.1,sy-sr*.35,0,sx,sy,sr);
+    heart.addColorStop(0,'rgba(255,214,120,.75)'); heart.addColorStop(.45,'rgba(255,170,80,.35)'); heart.addColorStop(1,'rgba(254,117,57,0)');
+    g.fillStyle=heart; g.fillRect(sx-sr,sy-sr,sr*2,sr*2); g.restore();
+    g.setTransform(1,0,0,1,0,0);
   }
 
 
@@ -401,7 +416,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
       if(reduced) b=.6;
       else if(layer===2) b=.45+.25*Math.sin(t/1700+f.ph);
       else b=.18+.82*Math.pow(Math.max(0,Math.sin(t/1000/f.per*Math.PI*2+f.ph)),3);
-      if(layer===2){ spr(BOKEH[f.c],f.x,f.y,f.s,b*.45); continue; }
+      if(layer===2){ spr(BOKEH[f.c],f.x,f.y,f.s,b*(TH.light?.62:.45)); continue; }
       if(false){ // little light streak, like a long exposure
         ctx.globalAlpha=b*.35; ctx.strokeStyle='rgb(255,196,90)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.x-(f.vx+g*30)*.5,f.y-f.vy*.5); ctx.stroke();
@@ -420,6 +435,12 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
     gust*=Math.pow(.3,dt); const g=gust;
     if(sunCv) ctx.drawImage(sunCv,-W*sp(t),0,W,H);
+    if(sunPos){
+      const px=sunPos.x-W*sp(t), br=reduced?1:.75+.25*Math.sin(t/1800), rr=sunPos.r*(1.9+.15*br);
+      const gl=ctx.createRadialGradient(px,sunPos.y,sunPos.r*.95,px,sunPos.y,rr);
+      gl.addColorStop(0,`rgba(255,160,80,${(.22*br).toFixed(3)})`); gl.addColorStop(1,'rgba(255,190,110,0)');
+      ctx.fillStyle=gl; ctx.fillRect(px-rr,sunPos.y-rr,rr*2,rr*2);
+    }
 
     // faint stars, then the distant fireflies
     ctx.fillStyle=`rgb(${TH.dust||'0,0,0'})`;
@@ -497,7 +518,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
         const tw=reduced?.8:.6+.4*Math.sin(t/1600*s.tw+s.ph), z=rot[i*12+2];
         const a=(e-.25)/.75*(.35+.65*tw)*dim*(.45+.55*clamp(z+.6,0,1))*headFade;
         if(s.star && tw>.55) spr(STAR[s.col],hubX[i],hubY[i],R*(.07+.1*(tw-.55)/.45),a);
-        spr(SPOT[s.col],hubX[i],hubY[i],R*(.03+.015*tw)*(.7+.3*clamp(z+.5,0,1)),a*.6);
+        spr(SPOT[s.col],hubX[i],hubY[i],R*(.055+.03*tw)*(.7+.3*clamp(z+.5,0,1)),a*.45);
       }
       ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
     };
@@ -544,7 +565,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     // detach, regrow, ambient drift
     if(pending.length){const keep=[]; for(const q of pending){ if(t>=q.at) detach(q.i,t,hx,hy,q.kind); else keep.push(q);} pending=keep;}
     for(const s of seeds) if(s.gone && t>=s.regrow){ s.gone=false; s.born=t; }
-    if(!reduced && !wished && t>=explodeAt+2600 && t>=nextAmbient){ const one=pick(1); if(one.length) pending.push({i:one[0],at:t,kind:'ambient'}); nextAmbient=t+1400+Math.random()*2200; }
+    if(!TH.spots && !reduced && !wished && t>=explodeAt+2600 && t>=nextAmbient){ const one=pick(1); if(one.length) pending.push({i:one[0],at:t,kind:'ambient'}); nextAmbient=t+1400+Math.random()*2200; }
 
     // seeds on the wind, shedding coloured stardust; the guide seed flies to the wish screen
     const windX=55+25*Math.sin(t/3100)+g*170, windY=-16;
