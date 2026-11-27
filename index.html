@@ -72,8 +72,8 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
 .back{font:inherit;font-size:15px;color:var(--ink);background:none;border:1px solid rgba(var(--ln),.28);border-radius:999px;padding:10px 18px 10px 14px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 .back:hover{border-color:rgba(var(--ln),.6)}
 .onb-body{flex:1 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-block:0 72px;text-align:center}
-.spot-area{width:100%;height:170px;position:relative;flex:none}
-#spot{position:absolute;left:50%;top:55%;width:1px;height:1px}
+.spot-area{width:100%;height:64px;position:relative;flex:none}
+#spot{position:absolute;left:50%;top:45%;width:1px;height:1px}
 .step{width:100%;max-width:760px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:26px;animation:stepIn .6s cubic-bezier(.22,1,.36,1) both}
 @keyframes stepIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.step{animation:none}}
@@ -196,7 +196,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
   const clamp=(v,a,b)=>v<a?a:v>b?b:v, ease3=x=>1-Math.pow(1-x,3), rnd=(a,b)=>a+Math.random()*(b-a);
   const DUR=reduced?1:1600;
   // colour theme for this version
-  const TH={"light": true, "pal": [[255, 90, 165], [255, 214, 82], [254, 117, 57], [244, 200, 78], [240, 79, 135], [255, 170, 110], [255, 246, 225]], "fly": [[244, 200, 78], [254, 117, 57], [240, 79, 135], [154, 130, 240]], "sky": null, "neb": null, "nebA": 0, "dust": null, "horizon": null, "grass": ["#8E9C63", "#657A45"], "stem": {"halo": null, "haloA": 0, "body": "101,122,69", "rim": "244,200,78", "rimA": 0.75}, "hair": "255,250,240", "occ": "10,47,189", "halo": null, "orb": ["255,244,220", "154,130,240", "255,236,200", "154,130,240"], "seedDark": "47,27,16"};
+  const TH={"light": true, "spots": true, "pal": [[255, 90, 165], [255, 214, 82], [254, 117, 57], [244, 200, 78], [240, 79, 135], [255, 170, 110], [255, 246, 225]], "fly": [[244, 200, 78], [254, 117, 57], [240, 79, 135], [154, 130, 240]], "sky": null, "neb": null, "nebA": 0, "dust": null, "horizon": null, "grass": ["#8E9C63", "#657A45"], "stem": {"halo": null, "haloA": 0, "body": "101,122,69", "rim": "244,200,78", "rimA": 0.75}, "hair": "255,250,240", "occ": "10,47,189", "halo": null, "orb": ["255,244,220", "154,130,240", "255,236,200", "154,130,240"], "seedDark": "47,27,16"};
   const ADD=TH.light?'source-over':'lighter';
 
   // star colours for the seed tips and their dust
@@ -373,7 +373,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
       rate:0, lit:kind==='guide'||(kind==='burst'&&Math.random()<.13)};
     if(kind==='burst'&&f.lit){ f.rate=2; f.spotK=rnd(1.1,2.6); }
     if(kind==='burst'){ const v=260+Math.random()*480; f.vx=d[0]*v+(Math.random()-.5)*90; f.vy=-d[1]*v+(Math.random()-.5)*90; f.life=1.4+Math.random()*2; }
-    if(kind==='guide'){ f.guide=true; f.g0=t; f.g1=t+(reduced?1:780+DUR+300); f.p0=[f.x,f.y]; f.spin=.25; f.rate=26; }
+    if(kind==='guide'){ f.guide=true; if(TH.spots) f.len=.001; f.g0=t; f.g1=t+(reduced?1:780+DUR+300); f.p0=[f.x,f.y]; f.spin=.25; f.rate=26; }
     free.push(f);
   }
 
