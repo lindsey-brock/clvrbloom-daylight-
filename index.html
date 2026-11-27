@@ -196,7 +196,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
   const clamp=(v,a,b)=>v<a?a:v>b?b:v, ease3=x=>1-Math.pow(1-x,3), rnd=(a,b)=>a+Math.random()*(b-a);
   const DUR=reduced?1:1600;
   // colour theme for this version
-  const TH={"light": true, "pal": [[255, 90, 165], [154, 130, 240], [65, 103, 242], [255, 214, 82], [240, 79, 135], [254, 117, 57], [255, 255, 255]], "fly": [[244, 200, 78], [254, 117, 57], [240, 79, 135], [154, 130, 240]], "sky": null, "neb": null, "nebA": 0, "dust": null, "horizon": null, "grass": ["#8E9C63", "#657A45"], "stem": {"halo": null, "haloA": 0, "body": "101,122,69", "rim": "244,200,78", "rimA": 0.75}, "hair": "255,250,240", "occ": "10,47,189", "halo": null, "orb": ["255,244,220", "154,130,240", "255,236,200", "154,130,240"], "seedDark": "47,27,16"};
+  const TH={"light": true, "pal": [[255, 90, 165], [255, 214, 82], [254, 117, 57], [244, 200, 78], [240, 79, 135], [255, 170, 110], [255, 246, 225]], "fly": [[244, 200, 78], [254, 117, 57], [240, 79, 135], [154, 130, 240]], "sky": null, "neb": null, "nebA": 0, "dust": null, "horizon": null, "grass": ["#8E9C63", "#657A45"], "stem": {"halo": null, "haloA": 0, "body": "101,122,69", "rim": "244,200,78", "rimA": 0.75}, "hair": "255,250,240", "occ": "10,47,189", "halo": null, "orb": ["255,244,220", "154,130,240", "255,236,200", "154,130,240"], "seedDark": "47,27,16"};
   const ADD=TH.light?'source-over':'lighter';
 
   // star colours for the seed tips and their dust
@@ -219,6 +219,8 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     return cv;
   }
   const GLOW=PAL.map(c=>glowSprite(c.join(','))), STAR=PAL.map(c=>starSprite(c.join(','))), ORBG=glowSprite('170,195,255');
+  // sun spots: soft round dapples of light with a warm bright centre, instead of star sparkles
+  const SPOT=PAL.map(c=>sprite(64,[[0,'rgba(255,250,236,.95)'],[.3,`rgba(${c.join(',')},.8)`],[.62,`rgba(${c.join(',')},.34)`],[1,`rgba(${c.join(',')},0)`]]));
   const FLY=AMBER.map(c=>sprite(64,[[0,'rgba(255,246,200,1)'],[.14,`rgba(${c},.95)`],[.4,`rgba(${c},.28)`],[1,`rgba(${c},0)`]]));
   const BOKEH=AMBER.map(c=>sprite(96,[[0,`rgba(${c},.55)`],[.62,`rgba(${c},.42)`],[.8,`rgba(${c},.16)`],[1,`rgba(${c},0)`]]));
 
@@ -352,7 +354,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     for(let i=0;i<N;i++){ const s=seeds[i]; if(s.gone) continue; s.pend=true;
       const sc=rot[i*12]*.5+rot[i*12+1]*.6+rot[i*12+2]*.4; if(sc>best){best=sc;gi=i;} }
     for(let i=0;i<N;i++){ if(i===gi||!seeds[i].pend) continue; pending.push({i,at:t+Math.random()*240,kind:'burst'}); }
-    if(gi>=0){ seeds[gi].lit=true; seeds[gi].col=3; pending.push({i:gi,at:t+520,kind:'guide'}); }
+    if(gi>=0){ seeds[gi].lit=true; seeds[gi].col=0; pending.push({i:gi,at:t+520,kind:'guide'}); }
     gust=Math.min(1.6,gust+1.2);
   }
   function regrow(at){
@@ -368,7 +370,8 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
     const d=[rot[o],rot[o+1],rot[o+2]];
     const f={x:hx+d[0]*.1*R, y:hy-d[1]*.1*R, vx:d[0]*70+25, vy:-d[1]*70-10, d, fil:s.fil, len:s.len, open:s.open,
       ph:Math.random()*6.28, age:0, tilt:(Math.random()-.5)*.7, spin:(Math.random()-.5)*.8, col:s.col, emit:0, sc:1,
-      rate:kind==='burst'?(s.lit?9:0):0, lit:(kind==='burst'&&s.lit)||kind==='guide'};
+      rate:0, lit:kind==='guide'||(kind==='burst'&&Math.random()<.13)};
+    if(kind==='burst'&&f.lit){ f.rate=2; f.spotK=rnd(1.1,2.6); }
     if(kind==='burst'){ const v=260+Math.random()*480; f.vx=d[0]*v+(Math.random()-.5)*90; f.vy=-d[1]*v+(Math.random()-.5)*90; f.life=1.4+Math.random()*2; }
     if(kind==='guide'){ f.guide=true; f.g0=t; f.g1=t+(reduced?1:780+DUR+300); f.p0=[f.x,f.y]; f.spin=.25; f.rate=26; }
     free.push(f);
@@ -494,7 +497,7 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
         const tw=reduced?.8:.6+.4*Math.sin(t/1600*s.tw+s.ph), z=rot[i*12+2];
         const a=(e-.25)/.75*(.35+.65*tw)*dim*(.45+.55*clamp(z+.6,0,1))*headFade;
         if(s.star && tw>.55) spr(STAR[s.col],hubX[i],hubY[i],R*(.07+.1*(tw-.55)/.45),a);
-        spr(GLOW[s.col],hubX[i],hubY[i],R*(.03+.015*tw)*(.7+.3*clamp(z+.5,0,1)),a*.6);
+        spr(SPOT[s.col],hubX[i],hubY[i],R*(.03+.015*tw)*(.7+.3*clamp(z+.5,0,1)),a*.6);
       }
       ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
     };
@@ -584,23 +587,22 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
       q.age+=dt; if(q.age>=q.life) continue; dk.push(q);
       q.vx*=Math.pow(.6,dt); q.vy=q.vy*Math.pow(.6,dt)+6*dt; q.x+=q.vx*dt; q.y+=q.vy*dt;
       const u=q.age/q.life, a=(1-u)*(1-u)*(.55+.45*Math.sin(q.age*14+q.ph));
-      spr(GLOW[q.c],q.x,q.y,q.s*(1.4-u*.6),a);
+      spr(SPOT[q.c],q.x,q.y,q.s*(1.5-u*.6),a*.9);
     }
     dust=dk;
     ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
 
     const onSun=f=>Math.hypot(f.tx-(G.cx-W*sp(t)),f.ty-G.cy)<G.R*1.24;
-    ctx.beginPath(); for(const f of free) if(!f.guide && !(TH.seedDark && !onSun(f))) freePath(f);
+    ctx.beginPath(); for(const f of free) if(!f.guide && !f.life && !(TH.seedDark && !onSun(f))) freePath(f);
     ctx.strokeStyle='rgba(240,244,255,.34)'; ctx.lineWidth=.6; ctx.stroke();
-    if(TH.seedDark){ ctx.beginPath(); for(const f of free) if(!f.guide && !onSun(f)) freePath(f); ctx.strokeStyle=`rgba(${TH.seedDark},.42)`; ctx.lineWidth=.6; ctx.stroke(); }
+    if(TH.seedDark){ ctx.beginPath(); for(const f of free) if(!f.guide && !f.life && !onSun(f)) freePath(f); ctx.strokeStyle=`rgba(${TH.seedDark},.42)`; ctx.lineWidth=.6; ctx.stroke(); }
     let guide=null; for(const f of free) if(f.guide) guide=f;
-    if(guide){ ctx.beginPath(); freePath(guide); ctx.strokeStyle=TH.seedDark&&!onSun(guide)?`rgba(${TH.seedDark},.7)`:'rgba(240,244,255,.62)'; ctx.lineWidth=.8; ctx.stroke(); }
+    if(false){ ctx.beginPath(); freePath(guide); ctx.strokeStyle=TH.seedDark&&!onSun(guide)?`rgba(${TH.seedDark},.7)`:'rgba(240,244,255,.62)'; ctx.lineWidth=.8; ctx.stroke(); }
     ctx.globalCompositeOperation=ADD;
     for(const f of free){
       if(!f.lit) continue;
-      const tw=.6+.4*Math.sin(t/180+f.ph), big=f.guide?1.5:1;
-      spr(STAR[f.col],f.tx,f.ty,R*(.09+.04*tw)*big*f.sc,f.fade*.9);
-      spr(GLOW[f.col],f.tx,f.ty,R*.07*big*f.sc,f.fade);
+      const tw=.6+.4*Math.sin(t/600+f.ph), big=f.guide?2.6:(f.spotK||1);
+      spr(SPOT[f.col],f.tx,f.ty,R*(.075+.025*tw)*big*f.sc,f.fade);
     }
     ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
   }
