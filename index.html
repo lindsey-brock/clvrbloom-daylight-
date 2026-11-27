@@ -416,7 +416,11 @@ h1 em{display:block;font-style:italic;color:var(--accent);text-shadow:none}
       if(reduced) b=.6;
       else if(layer===2) b=.45+.25*Math.sin(t/1700+f.ph);
       else b=.18+.82*Math.pow(Math.max(0,Math.sin(t/1000/f.per*Math.PI*2+f.ph)),3);
-      if(layer===2){ spr(BOKEH[f.c],f.x,f.y,f.s,b*(TH.light?.62:.45)); continue; }
+      if(layer===2){
+        // on the light page, glints fade away before they reach the blue sun and the bloom
+        let keep=1;
+        if(TH.light){ const d=Math.hypot(f.x-(G.cx-W*sp(t)),f.y-G.cy); keep=clamp((d-(G.R*1.24+f.s*.5))/70,0,1); }
+        spr(BOKEH[f.c],f.x,f.y,f.s,b*(TH.light?.62:.45)*keep); continue; }
       if(false){ // little light streak, like a long exposure
         ctx.globalAlpha=b*.35; ctx.strokeStyle='rgb(255,196,90)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.x-(f.vx+g*30)*.5,f.y-f.vy*.5); ctx.stroke();
